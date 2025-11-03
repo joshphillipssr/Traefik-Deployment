@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Traefik runtime
+traefik/traefik-data/acme.json
+traefik/.env
