@@ -3,6 +3,7 @@
 Reusable, Docker-first reverse proxy setup with **Traefik** + **Let's Encrypt (DNS-01 via Cloudflare)** and small scripts to deploy multiple sites behind a single proxy.
 
 ## Quick start (server)
+
 ```bash
 # one-time: clone repo to server
 sudo git clone https://github.com/joshphillipssr/Traefik-Deployment.git /opt/traefik
@@ -82,4 +83,4 @@ sudo ./traefik/scripts/remove_site.sh \
 
 ## License
 
-This project is licensed under the [Your License Here].
+This project is licensed under the MIT License.
