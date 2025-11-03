@@ -1,55 +1,71 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Deploy a site behind Traefik using Docker labels.
-# Required vars:
+
+# Deploy a site behind Traefik.
+#
+# Required ENV:
 #   SITE_NAME="shortname"
 #   SITE_HOSTS="example.com www.example.com"
-#   SITE_IMAGE="ghcr.io/you/app:latest"
-# Optional:
-#   TARGET_DIR="/opt/sites" (default)
-#   NETWORK_NAME="traefik_proxy" (default)
+#   SITE_IMAGE="ghcr.io/you/your-site:latest"
+#
+# Optional ENV:
+#   TARGET_DIR="/opt/sites"          # where site stacks live
+#   NETWORK_NAME="traefik_proxy"     # shared docker network
 
-: "${SITE_NAME:?SITE_NAME is required}"
-: "${SITE_HOSTS:?SITE_HOSTS is required}"
-: "${SITE_IMAGE:?SITE_IMAGE is required}"
+: "${SITE_NAME:?SITE_NAME required}"
+: "${SITE_HOSTS:?SITE_HOSTS required}"
+: "${SITE_IMAGE:?SITE_IMAGE required}"
 
 TARGET_DIR="${TARGET_DIR:-/opt/sites}"
 NETWORK_NAME="${NETWORK_NAME:-traefik_proxy}"
 BASE="${TARGET_DIR}/${SITE_NAME}"
 
-# Ensure Docker available
+# Ensure Docker available (no sudo; assumes user in 'docker' group)
 if ! command -v docker >/dev/null 2>&1; then
   echo "Error: docker not found or not in PATH." >&2
   exit 1
 fi
+if ! docker info >/dev/null 2>&1; then
+  echo "Error: cannot talk to the Docker daemon. Ensure your user is in the 'docker' group." >&2
+  exit 1
+fi
 
-sudo mkdir -p "$TARGET_DIR" "$BASE"
-sudo docker network create "$NETWORK_NAME" >/dev/null 2>&1 || true
+echo "Ensuring directories exist: ${TARGET_DIR} and ${BASE}"
+mkdir -p "${TARGET_DIR}" "${BASE}"
 
-# Build Host(`a`,`b`) rule (space-separated hosts -> backtick-wrapped list)
-rule="Host(`$(echo $SITE_HOSTS | sed 's/ /`,`/g')`)"
+echo "Ensuring shared network exists: ${NETWORK_NAME}"
+docker network create "${NETWORK_NAME}" >/dev/null 2>&1 || true
 
-echo "Creating docker-compose for ${SITE_NAME} in ${BASE}..."
+# Build the Host() rule for Traefik (space-separated to comma-separated)
+HOST_RULE=$(printf "%s" "${SITE_HOSTS}" | awk '{for (i=1;i<=NF;i++) printf("`%s`%s", $i, (i<NF?",":""));}')
+# Example -> Host(`a.com`,`www.a.com`)
 
-cat <<YML | sudo tee "${BASE}/docker-compose.yml" >/dev/null
+COMPOSE_FILE="${BASE}/docker-compose.yml"
+echo "Writing ${COMPOSE_FILE} ..."
+cat > "${COMPOSE_FILE}" <<YML
+version: "3.9"
+
 services:
-  ${SITE_NAME}_site:
+  ${SITE_NAME}:
     image: ${SITE_IMAGE}
-    container_name: ${SITE_NAME}_site
+    container_name: ${SITE_NAME}
     restart: unless-stopped
     networks:
       - ${NETWORK_NAME}
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.${SITE_NAME}.rule=${rule}
-      - traefik.http.routers.${SITE_NAME}.entrypoints=websecure
-      - traefik.http.routers.${SITE_NAME}.tls=true
-      - traefik.http.routers.${SITE_NAME}.tls.certresolver=cf
-      - traefik.http.services.${SITE_NAME}.loadbalancer.server.port=80
+      - "traefik.enable=true"
+      - "traefik.http.routers.${SITE_NAME}.entrypoints=websecure"
+      - "traefik.http.routers.${SITE_NAME}.rule=Host(${HOST_RULE})"
+      - "traefik.http.routers.${SITE_NAME}.tls.certresolver=cf"
+      - "traefik.http.services.${SITE_NAME}.loadbalancer.server.port=80"
+
 networks:
   ${NETWORK_NAME}:
     external: true
 YML
 
-sudo docker compose -f "${BASE}/docker-compose.yml" up -d
+echo "Bringing up ${SITE_NAME} ..."
+docker compose -f "${COMPOSE_FILE}" pull
+docker compose -f "${COMPOSE_FILE}" up -d
+
 echo "✅ Deployed ${SITE_NAME} for hosts: ${SITE_HOSTS}"

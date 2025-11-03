@@ -17,9 +17,7 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-# Ensure runtime file exists with correct perms
-mkdir -p traefik/traefik-data
-[ -f traefik/traefik-data/acme.json ] || (touch traefik/traefik-data/acme.json && chmod 600 traefik/traefik-data/acme.json)
+# ACME storage is handled by a named volume (no host file needed)
 
 # Ensure network
 NETWORK_NAME="${NETWORK_NAME:-traefik_proxy}"
@@ -44,6 +42,7 @@ CF_API_TOKEN=${CF_API_TOKEN}
 EMAIL=${EMAIL}
 USE_STAGING=${USE_STAGING}
 EOF
+chmod 600 traefik/.env
 
 docker compose -f traefik/docker-compose.yml --env-file traefik/.env up -d
-echo "Traefik is up on ports 80/443 (staging=${USE_STAGING})."
+echo "Traefik is up (host 80→8080, 443→8443; staging=${USE_STAGING})."

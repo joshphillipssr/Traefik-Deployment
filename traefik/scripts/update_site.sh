@@ -8,7 +8,7 @@ set -euo pipefail
 #   TARGET_DIR="/opt/sites" (default)
 #
 # Example:
-#   sudo SITE_NAME="jpsr" ./traefik/scripts/update_site.sh
+#   SITE_NAME="jpsr" ./traefik/scripts/update_site.sh
 
 : "${SITE_NAME:?SITE_NAME required}"
 TARGET_DIR="${TARGET_DIR:-/opt/sites}"
@@ -20,7 +20,7 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 if ! docker info >/dev/null 2>&1; then
-  echo "Error: cannot talk to the Docker daemon. Try running with sudo or ensure your user is in the 'docker' group." >&2
+  echo "Error: cannot talk to the Docker daemon. Ensure your user is in the 'docker' group." >&2
   exit 1
 fi
 
@@ -31,9 +31,9 @@ if [[ ! -f "${COMPOSE_FILE}" ]]; then
 fi
 
 echo "Pulling latest image(s) for ${SITE_NAME}..."
-sudo docker compose -f "${COMPOSE_FILE}" pull
+docker compose -f "${COMPOSE_FILE}" pull
 
 echo "Recreating ${SITE_NAME} with updated image(s)..."
-sudo docker compose -f "${COMPOSE_FILE}" up -d
+docker compose -f "${COMPOSE_FILE}" up -d
 
 echo "✅ Updated ${SITE_NAME}."

@@ -1,30 +1,26 @@
-networks:
-  traefik_proxy:
-    external: true
+#!/bin/bash
 
+TARGET_DIR="/var/www/mysite"
+BASE="/var/www"
+NETWORK_NAME="my_network"
+
+mkdir -p "$TARGET_DIR" "$BASE"
+
+docker network create "$NETWORK_NAME" >/dev/null 2>&1 || true
+
+cat <<YML > "${BASE}/docker-compose.yml"
+version: '3'
 services:
-  traefik:
-    image: traefik:v3.5
-    container_name: traefik
-    restart: unless-stopped
-    networks: [traefik_proxy]
+  web:
+    image: nginx:latest
     ports:
       - "80:80"
-      - "443:443"
-    environment:
-      CF_DNS_API_TOKEN: ${CF_API_TOKEN}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik-data/acme.json:/acme.json
-    command:
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --certificatesresolvers.cf.acme.email=${EMAIL}
-      - --certificatesresolvers.cf.acme.storage=/acme.json
-      - --certificatesresolvers.cf.acme.dnschallenge.provider=cloudflare
-      # Uncomment the next line while testing to avoid Let's Encrypt rate limits (uses the staging CA)
-      # - --certificatesresolvers.cf.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+    networks:
+      - ${NETWORK_NAME}
+
+networks:
+  ${NETWORK_NAME}:
+    external: true
+YML
+
+docker compose -f "${BASE}/docker-compose.yml" up -d

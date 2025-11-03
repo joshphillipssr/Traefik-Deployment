@@ -16,8 +16,8 @@ fi
 echo "Ensuring Docker network '${NETWORK_NAME}' exists..."
 
 if docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
-  echo "Docker network '${NETWORK_NAME}' already exists."
+  echo "Network '${NETWORK_NAME}' already exists."
 else
   docker network create "${NETWORK_NAME}" >/dev/null
-  echo "Created Docker network '${NETWORK_NAME}'."
+  echo "✅ Created network '${NETWORK_NAME}'."
 fi
