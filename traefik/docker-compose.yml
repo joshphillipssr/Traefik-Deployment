@@ -1,14 +1,3 @@
-#!/bin/bash
-
-TARGET_DIR="/var/www/mysite"
-BASE="/var/www"
-NETWORK_NAME="my_network"
-
-mkdir -p "$TARGET_DIR" "$BASE"
-
-docker network create "$NETWORK_NAME" >/dev/null 2>&1 || true
-
-cat <<YML > "${BASE}/docker-compose.yml"
 version: '3'
 services:
   web:
@@ -16,11 +5,8 @@ services:
     ports:
       - "80:80"
     networks:
-      - ${NETWORK_NAME}
+      - my_network
 
 networks:
-  ${NETWORK_NAME}:
+  my_network:
     external: true
-YML
-
-docker compose -f "${BASE}/docker-compose.yml" up -d
