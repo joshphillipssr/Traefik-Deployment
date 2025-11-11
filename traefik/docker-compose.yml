@@ -1,12 +1,35 @@
-version: '3'
 services:
-  web:
-    image: nginx:latest
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --entrypoints.web.address=:8080
+      - --entrypoints.websecure.address=:8443
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --certificatesresolvers.cf.acme.email=${EMAIL}
+      - --certificatesresolvers.cf.acme.storage=/acme/acme.json
+      - --certificatesresolvers.cf.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.cf.acme.dnschallenge.resolvers=1.1.1.1:53,1.0.0.1:53
     ports:
-      - "80:80"
+      - "80:8080"
+      - "443:8443"
+    environment:
+      - CF_DNS_API_TOKEN=${CF_API_TOKEN}
     networks:
-      - my_network
+      - traefik_proxy
+    volumes:
+      - traefik_acme:/acme
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    read_only: true
+    tmpfs:
+      - /tmp
 
 networks:
-  my_network:
+  traefik_proxy:
     external: true
+
+volumes:
+  traefik_acme: {}
