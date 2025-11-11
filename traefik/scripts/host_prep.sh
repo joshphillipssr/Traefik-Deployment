@@ -56,12 +56,13 @@ ensure_docker() {
 clone_or_update_repo() {
   if [[ -d "$TRAEFIK_DIR/.git" ]]; then
     log "Updating Traefik-Deployment in $TRAEFIK_DIR"
-    git -C "$TRAEFIK_DIR" fetch --all --prune
-    git -C "$TRAEFIK_DIR" switch -q main || true
-    git -C "$TRAEFIK_DIR" pull --ff-only
+    # Run git commands as the deploy user
+    sudo -u "$DEPLOY_USER" git -C "$TRAEFIK_DIR" fetch --all --prune
+    sudo -u "$DEPLOY_USER" git -C "$TRAEFIK_DIR" switch -q main || true
+    sudo -u "$DEPLOY_USER" git -C "$TRAEFIK_DIR" pull --ff-only
   else
     log "Cloning Traefik-Deployment to $TRAEFIK_DIR"
-    git clone "$REPO_URL" "$TRAEFIK_DIR"
+    sudo -u "$DEPLOY_USER" git clone "$REPO_URL" "$TRAEFIK_DIR"
   fi
   chown -R "$DEPLOY_USER:$DEPLOY_USER" "$TRAEFIK_DIR"
   chmod +x "$TRAEFIK_DIR"/traefik/scripts/*.sh
