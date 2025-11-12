@@ -27,7 +27,7 @@ sudo ./traefik/scripts/deploy_site.sh \
 
 This repository is organized as follows:
 
-```
+```text
 /traefik
   /configs          # Configuration files for Traefik and related services
   /scripts          # Helper scripts to manage Traefik and site deployments
@@ -92,9 +92,11 @@ When your GitHub Actions workflow completes successfully (e.g., a Docker image b
 
    - Push to the `main` branch so the GitHub Action builds and pushes your Docker image.
    - Check logs on your server:
+
      ```bash
      docker logs webhook -f
      ```
+
    - You should see confirmation of the event and automatic redeploy for your site container.
 
 4. **Adding Another Site Hook:**
