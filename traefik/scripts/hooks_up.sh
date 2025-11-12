@@ -46,7 +46,7 @@ log "Writing ${HOOKS_DIR}/docker-compose.yml"
 cat > "${HOOKS_DIR}/docker-compose.yml" <<"YML"
 services:
   hooks:
-    image: ghcr.io/adnanh/webhook:2.8.1
+    image: almir/webhook:2.8.1
     container_name: webhook
     restart: unless-stopped
     networks:
