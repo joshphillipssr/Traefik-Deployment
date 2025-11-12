@@ -32,9 +32,13 @@ if [[ ! -f "${COMPOSE_FILE}" ]]; then
 fi
 
 echo "Pulling latest image(s) for ${SITE_NAME}..."
-docker compose -f "${COMPOSE_FILE}" pull
+# Run from the site directory to avoid permission issues when invoked via sudo from /root
+(
+  cd "${BASE}"
+  docker compose pull
 
-echo "Recreating ${SITE_NAME} with updated image(s)..."
-docker compose -f "${COMPOSE_FILE}" up -d
+  echo "Recreating ${SITE_NAME} with updated image(s)..."
+  docker compose up -d
+)
 
 echo "✅ Updated ${SITE_NAME}."
