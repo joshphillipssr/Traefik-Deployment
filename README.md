@@ -57,6 +57,62 @@ Make sure to keep these values secure and do not commit them to version control.
 - `update_site.sh`: Updates an existing deployed site container to a new image or configuration.
 - `remove_site.sh`: Removes a deployed site container and its associated Traefik routing.
 
+## Webhook Deployment Automation
+
+A lightweight webhook listener (`hooks_up.sh`) is included to enable automatic site updates triggered by GitHub Actions webhooks.
+
+### How It Works
+
+When your GitHub Actions workflow completes successfully (e.g., a Docker image build and push), GitHub can send a webhook to your server. The webhook listener receives the event, verifies its signature, and then calls `update_site.sh` to pull and redeploy the latest image for the site.
+
+### Deployment Steps
+
+1. **Run the setup script:**
+
+   ```bash
+   sudo /opt/traefik/traefik/scripts/hooks_up.sh
+   ```
+
+   This script will:
+   - Create `/opt/traefik/hooks` with necessary files
+   - Generate `docker-compose.yml` for the webhook listener (running behind Traefik)
+   - Write a starter `hooks.json` with a deploy rule for your site (`deploy-jpsr`)
+   - Add a sudoers rule allowing only the exact update command
+   - Bring up the webhook container on the shared `traefik_proxy` network
+
+2. **Configure GitHub Webhook:**
+
+   - Go to your repository → **Settings → Webhooks → Add Webhook**
+   - **Payload URL:** `https://hooks.joshphillipssr.com/hooks/deploy-jpsr`
+   - **Content type:** `application/json`
+   - **Secret:** use the same value as in `/opt/traefik/hooks/hooks.json`
+   - **Events:** select **Workflow runs**
+
+3. **Testing the Webhook:**
+
+   - Push to the `main` branch so the GitHub Action builds and pushes your Docker image.
+   - Check logs on your server:
+     ```bash
+     docker logs webhook -f
+     ```
+   - You should see confirmation of the event and automatic redeploy for your site container.
+
+4. **Adding Another Site Hook:**
+
+   - Copy the existing hook entry in `/opt/traefik/hooks/hooks.json`
+   - Change:
+     - `"id"` → unique name (e.g. `deploy-newsite`)
+     - The `"name"` value passed to `deploy-site.sh`
+     - Replace with a new random secret
+   - Add the corresponding webhook in the new site’s GitHub repository.
+   - No need to restart — the webhook container hot-reloads the JSON file.
+
+### Notes
+
+- Each site uses its own secret for verification.
+- The listener runs read-only and minimal privileges.
+- If you need to update the webhook config, edit `/opt/traefik/hooks/hooks.json` and Traefik will continue serving without restart.
+
 ## Updating and Removing Sites
 
 To update an existing site, run:
