@@ -139,6 +139,7 @@ sudo ./traefik/scripts/remove_site.sh \
 - Let's Encrypt certificates are automatically managed by Traefik using the DNS-01 challenge via Cloudflare API.
 
 When a new host (e.g., `hooks.joshphillipssr.com` or any other domain routed through Traefik) is added to your configuration or deployed container labels, Traefik will automatically request and obtain a new Let's Encrypt certificate for that host the first time it receives a request. No manual certificate creation is required—Traefik handles it transparently using the configured Cloudflare DNS-01 resolver.
+
 - Use the `USE_STAGING` variable to test your setup without hitting Let's Encrypt production rate limits.
 
 ## License
