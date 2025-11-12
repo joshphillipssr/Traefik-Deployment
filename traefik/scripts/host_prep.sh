@@ -75,10 +75,14 @@ next_steps() {
 
 Now switch to the '$DEPLOY_USER' user (or SSH in as that user) and start Traefik:
 
-  sudo -i -u ${DEPLOY_USER}
+  sudo -iu ${DEPLOY_USER}
 
   CF_API_TOKEN="YOUR_CF_TOKEN" EMAIL="you@example.com" USE_STAGING=false \\
     $TRAEFIK_DIR/traefik/scripts/traefik_up.sh
+
+Reference the readme for further instructions:
+https://github.com/joshphillipssr/joshphillipssr.com
+https://github.com/joshphillipssr/Traefik-Deployment
 
 EOF
 }
