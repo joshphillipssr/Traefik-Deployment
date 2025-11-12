@@ -10,6 +10,7 @@ set -euo pipefail
 # Example:
 #   SITE_NAME="jpsr" ./traefik/scripts/update_site.sh
 
+SITE_NAME="${SITE_NAME:-${1:-}}"
 : "${SITE_NAME:?SITE_NAME required}"
 TARGET_DIR="${TARGET_DIR:-/opt/sites}"
 BASE="${TARGET_DIR}/${SITE_NAME}"
