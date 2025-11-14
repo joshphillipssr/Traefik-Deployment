@@ -25,6 +25,7 @@ fi
 CF_API_TOKEN="${CF_API_TOKEN:?CF_API_TOKEN required (set in environment or $ENV_FILE)}"
 EMAIL="${EMAIL:?EMAIL required (set in environment or $ENV_FILE)}"
 USE_STAGING="${USE_STAGING:-false}"
+WEBHOOK_SECRET="${WEBHOOK_SECRET:?WEBHOOK_SECRET required (set in environment or $ENV_FILE)}"
 
 # Ensure Docker available
 if ! command -v docker >/dev/null 2>&1; then

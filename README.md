@@ -54,6 +54,7 @@ Create `~deploy/traefik.env` with:
 CF_API_TOKEN=your_cloudflare_token
 EMAIL=you@example.com
 USE_STAGING=false
+WH_SECRET=ChangeThisSecretNow
 ```
 
 Traefik resolves all environment variables automatically through:
@@ -64,6 +65,8 @@ Traefik resolves all environment variables automatically through:
 
 This keeps secrets **out of your repository** and out of the command history.  
 All Traefik scripts automatically source this file, ensuring no secrets are stored in `/opt` or inside repositories.
+
+- `WH_SECRET` is used to verify GitHub webhook signatures and must match the secret configured in the GitHub webhook settings.
 
 ---
 

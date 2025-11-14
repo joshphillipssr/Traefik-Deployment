@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-ENV_FILE="/opt/traefik/.env"
+ENV_FILE="/home/deploy/traefik.env"
 if [[ -f "$ENV_FILE" ]]; then
   set -o allexport
   source "$ENV_FILE"
@@ -24,13 +24,13 @@ if [[ -f "$ENV_FILE" ]]; then
 fi
 
 HOOKS_DIR="${HOOKS_DIR:-${TRAEFIK_HOOKS_DIR:-/opt/traefik/hooks}}"
-TRAEFIK_DIR="${TRAEFIK_DIR:-${TRAEFIK_DIR:-/opt/traefik}}"
-WEBHOOK_PORT="${WEBHOOK_PORT:-${WEBHOOK_PORT:-9000}}"
-WEBHOOK_HOST="${WEBHOOK_HOST:-${WEBHOOK_HOST:-127.0.0.1}}"
+TRAEFIK_DIR="${TRAEFIK_DIR:-/opt/traefik}"
+WEBHOOK_PORT="${WEBHOOK_PORT:-9000}"
+WEBHOOK_HOST="${WEBHOOK_HOST:-127.0.0.1}"
 SERVICE_NAME="${SERVICE_NAME:-${WEBHOOK_SERVICE_NAME:-traefik-webhook}}"
-DEPLOY_USER="${DEPLOY_USER:-${DEPLOY_USER:-deploy}}"
-WEBHOOK_BIN="${WEBHOOK_BIN:-${WEBHOOK_BIN:-/usr/bin/webhook}}"
-WEBHOOK_SECRET="${WEBHOOK_SECRET:-${WEBHOOK_SECRET:-ChangeThisSecretNow}}"
+DEPLOY_USER="${DEPLOY_USER:-deploy}"
+WEBHOOK_BIN="${WEBHOOK_BIN:-/usr/bin/webhook}"
+WEBHOOK_SECRET="${WEBHOOK_SECRET:-ChangeThisSecretNow}"
 
 need_root() {
   if [[ ${EUID:-$(id -u)} -ne 0 ]]; then
@@ -90,7 +90,7 @@ HOOKS_JSON="${HOOKS_DIR}/hooks.json"
 
 if [[ ! -f "${HOOKS_JSON}" ]]; then
   log "Creating starter ${HOOKS_JSON} (includes 'deploy-jpsr')"
-  cat > "${HOOKS_JSON}" <<"JSON"
+  cat > "${HOOKS_JSON}" <<JSON
 [
   {
     "id": "deploy-jpsr",
@@ -114,7 +114,7 @@ if [[ ! -f "${HOOKS_JSON}" ]]; then
         {
           "match": {
             "type": "payload-hash-sha256",
-            "secret": "'${WEBHOOK_SECRET}'"
+            "secret": "${WEBHOOK_SECRET}"
           }
         },
         {
@@ -194,12 +194,11 @@ echo "     - ${HOOKS_JSON}"
 echo "     - ${SERVICE_FILE}"
 echo
 echo "🔐 IMPORTANT:"
-echo "  - Webhook secret is loaded from ${ENV_FILE} (WEBHOOK_SECRET=${WEBHOOK_SECRET})."
+echo "  - Webhook secret is loaded from ${ENV_FILE} (WEBHOOK_SECRET)."
 echo "  - In GitHub → Settings → Webhooks, add a webhook:"
 echo "      URL: https://hooks.your-domain.com/hooks/deploy-jpsr"
 echo "      Content type: application/json"
-echo "      Secret: (the same secret you set in hooks.json)"
-echo "      Events: Workflow runs"
+echo "      Secret: the WEBHOOK_SECRET value from ${ENV_FILE}"
 echo
 echo "🧪 Test:"
 echo "  - Push to main so your 'Build and Push Docker Image' workflow completes."
