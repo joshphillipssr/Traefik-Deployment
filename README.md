@@ -47,9 +47,8 @@ This systemd‑based approach is the most secure and the least error‑prone way
 
 ## 📦 Environment Variables (.env)
 
-To keep scripts static and clean, the toolset supports a `.env` file next to the Traefik installation.
-
-Create `/opt/traefik/.env` with:
+To keep scripts static and clean, the toolset uses a **single global .env** stored in the deploy user's home directory.  
+Create `~deploy/traefik.env` with:
 
 ```plaintext
 CF_API_TOKEN=your_cloudflare_token
@@ -63,7 +62,8 @@ Traefik resolves all environment variables automatically through:
 - script references
 - systemd units (optional)
 
-This keeps secrets **out of your repository** and out of the command history.
+This keeps secrets **out of your repository** and out of the command history.  
+All Traefik scripts automatically source this file, ensuring no secrets are stored in `/opt` or inside repositories.
 
 ---
 
@@ -85,7 +85,7 @@ sudo ./traefik/scripts/create_network.sh
 ### Step 2 — Create your `.env` file
 
 ```bash
-sudo nano /opt/traefik/traefik/.env
+sudo nano ~deploy/traefik.env
 ```
 
 Fill in:
@@ -103,7 +103,7 @@ cd /opt/traefik
 sudo ./traefik/scripts/traefik_up.sh
 ```
 
-Traefik will come up with automatic HTTPS, and anytime your `.env` changes, rerunning this script updates the configuration without wiping your certificates.
+Traefik will come up with automatic HTTPS, and anytime your `~deploy/traefik.env` changes, rerunning this script updates the configuration without wiping your certificates.
 
 ---
 
