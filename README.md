@@ -1,243 +1,219 @@
-# Traefik-Deployment — The Traefik Toolset
+# Traefik-Deployment — Hardened Traefik Host Toolset
 
-A reusable, hardened, Docker‑first reverse proxy setup with **Traefik**, **Cloudflare DNS‑01 (Let’s Encrypt)**, system‑level management scripts, and optional deployment automation.
+A fully-opinionated, production-grade deployment model for running **Traefik v3**, **Cloudflare DNS‑01**, **multi‑site container routing**, and **secure system‑level automation** on a single Linux host.
 
-This repository provides a complete toolset for operating Traefik on a Linux host with minimal privileges, clean separation between concerns, and optional automation tools for managing multiple containerized sites.
-
----
-
-## 🚀 What the Traefik Toolset Does
-
-The toolset installs and manages:
-
-### **1. A production‑ready Traefik reverse proxy**
-
-- Automatic HTTPS via DNS‑01 (Cloudflare)
-- Certificate auto‑renewal
-- Isolation in a dedicated Docker network
-- Support for multiple sites/containers behind the same proxy
-
-### **2. System‑level scripts for Traefik lifecycle**
-
-Located in `scripts/`, these include:
-
-- `create_network.sh` — ensures the shared `traefik_proxy` Docker network exists  
-- `traefik_up.sh` — starts Traefik using environment variables + static docker-compose  
-- `deploy_site.sh` — deploys a site to Traefik  
-- `update_site.sh` — refreshes a site with the latest image  
-- `remove_site.sh` — undeploys a site cleanly  
-
-These scripts run with the minimal required host privileges and never store secrets on disk.
-
-### **3. Optional Webhook Automation (systemd)**
-
-For users who want *automatic redeployments* after GitHub Actions builds:
-
-- A minimal webhook listener (`webhook.service`)
-- Validates GitHub signatures  
-- Runs the restricted system‑level update command  
-- Fully isolated from Traefik  
-- Does **not** run inside a container  
-- Requires no shell inside a container  
-- Avoids the complexity of bind‑mounting docker.sock into automation containers  
-
-This systemd‑based approach is the most secure and the least error‑prone way to automate deployments.
+This repository provides the authoritative scripts and configuration required to provision Traefik, manage site containers, and (optionally) enable GitHub‑driven automated deployments.
 
 ---
 
-## 📦 Environment Variables (.env)
+## 🧭 Architecture Summary
 
-To keep scripts static and clean, the toolset uses a **single global .env** stored in the deploy user's home directory.  
-Create `~deploy/traefik.env` with:
+```text
+Client → Cloudflare → Traefik → Site Containers (Docker)
+```
 
-```plaintext
-CF_API_TOKEN=your_cloudflare_token
-EMAIL=you@example.com
+All components run on one Linux VPS/host. Traefik and all sites run as Docker containers. Automation is handled by a hardened systemd webhook service.
+
+Traefik and all sites share the Docker network:
+
+```text
+traefik_proxy
+```
+
+The host file layout is standardized and required:
+
+```text
+/opt/
+  traefik/
+    docker-compose.yml
+    scripts/
+    hooks/
+    volumes/
+  sites/
+    <site-name>/
+```
+
+---
+
+## 🔐 Environment Variables — Single Source of Truth
+
+All secrets and configuration live **only** in:
+
+```text
+~deploy/traefik.env
+```
+
+Required variables:
+
+```text
+CF_API_TOKEN=
+EMAIL=
 USE_STAGING=false
-WH_SECRET=ChangeThisSecretNow
+WH_SECRET=
+HOSTNAME=
+DEFAULT_SITE_REPO=
+DEFAULT_SITE_TEMPLATE=
 ```
 
-Traefik resolves all environment variables automatically through:
-
-- the docker‑compose file
-- script references
-- systemd units (optional)
-
-This keeps secrets **out of your repository** and out of the command history.  
-All Traefik scripts automatically source this file, ensuring no secrets are stored in `/opt` or inside repositories.
-
-- `WH_SECRET` is used to verify GitHub webhook signatures and must match the secret configured in the GitHub webhook settings.
+All scripts source this file. No secrets appear inside `/opt`, compose files, or repositories.
 
 ---
 
-## 🧰 Installing the Traefik Toolset (on the host)
+## 🛠 Host Preparation (Two-Step)
 
-SSH into your server and run:
+Provisioning Traefik requires two scripts: one run as **root**, one run as **deploy**.
 
-```bash
-sudo git clone https://github.com/joshphillipssr/Traefik-Deployment.git /opt/traefik
-```
+### **Step 1 — host_prep1.sh (run as root)**
 
-### Step 1 — Create the shared Docker network
+- Installs Docker & Docker Compose
+- Creates `deploy` user with restricted sudoers entries
+- Creates `/opt/traefik` and `/opt/sites`
+- Copies `traefik.env.sample` to `~deploy/traefik.env`
+- Instructs operator to log in as deploy
+
+### **Step 2 — host_prep2.sh (run as deploy)**
+
+- Sources `~deploy/traefik.env`
+- Clones Traefik‑Deployment repo into `/opt/traefik`
+- Ensures permissions
+- Runs `create_network.sh`
+- Brings Traefik online using `traefik_up.sh`
+
+---
+
+## 🚦 Starting Traefik
+
+Traefik runs from the static compose file in `/opt/traefik/docker-compose.yml`.
 
 ```bash
 cd /opt/traefik
-sudo ./traefik/scripts/create_network.sh
+./scripts/traefik_up.sh
 ```
 
-### Step 2 — Create your `.env` file
+This ensures:
 
-```bash
-sudo nano ~deploy/traefik.env
-```
-
-Fill in:
-
-```plaintext
-CF_API_TOKEN=...
-EMAIL=...
-USE_STAGING=false
-```
-
-### Step 3 — Start Traefik
-
-```bash
-cd /opt/traefik
-sudo ./traefik/scripts/traefik_up.sh
-```
-
-Traefik will come up with automatic HTTPS, and anytime your `~deploy/traefik.env` changes, rerunning this script updates the configuration without wiping your certificates.
+- ACME DNS‑01 via Cloudflare
+- Automatic certificate issuance & renewal
+- Dashboard available via secure hostname (if configured)
 
 ---
 
-## 🌐 Deploying a Site
+## 🌐 Deploying a Site (First Deployment)
 
-Each site lives inside `/opt/sites/<site-name>` with its own docker-compose file dynamically generated by the toolset.
+Sites live under:
 
-Example:
+```text
+/opt/sites/<SITE_NAME>/
+```
+
+To bootstrap a site from its template repo:
 
 ```bash
-sudo ./traefik/scripts/deploy_site.sh \
-  SITE_NAME="jpsr" \
-  SITE_HOSTS="joshphillipssr.com www.joshphillipssr.com" \
-  SITE_IMAGE="ghcr.io/joshphillipssr/jpsr-site:latest"
+/opt/sites/<SITE_NAME>/scripts/bootstrap_site_on_host.sh
+```
+
+To deploy a site to Traefik:
+
+```bash
+/opt/sites/<SITE_NAME>/scripts/deploy_to_host.sh
 ```
 
 This:
 
-✔ Creates `/opt/sites/jpsr/`  
-✔ Generates a correct Traefik‑aware docker-compose  
-✔ Attaches the container to `traefik_proxy`  
-✔ Starts the site with automatic HTTPS  
+- Generates a Traefik‑aware docker-compose.yml
+- Connects container to `traefik_proxy`
+- Applies correct Traefik labels
+- Starts the container
+
+After this one-time deployment, future deploys can be automated.
 
 ---
 
 ## 🔄 Updating a Site Manually
 
 ```bash
-sudo ./traefik/scripts/update_site.sh SITE_NAME="jpsr"
+sudo /opt/traefik/scripts/update_site.sh <SITE_NAME>
 ```
 
-This pulls latest images and restarts the container cleanly.
+Pulls latest GHCR image and restarts the container.
 
 ---
 
 ## 🧨 Removing a Site
 
 ```bash
-sudo ./traefik/scripts/remove_site.sh SITE_NAME="jpsr"
+sudo /opt/traefik/scripts/remove_site.sh <SITE_NAME>
 ```
 
-This tears the container down and deletes its directory.
+Deletes the site directory and container.
 
 ---
 
-## 🔔 Optional: Automatic Deployment via Webhooks (systemd)
+## 🎛 Traefik Dashboard (Optional)
 
-This is the *secure*, *reliable*, and *recommended* automation workflow.
+Dashboard enablement requires hostname‑based routing and a basic‑auth middleware. Example labels are included in the Traefik container’s docker‑compose.yml.
 
-### What It Does
+---
 
-- Listens for GitHub “workflow_run” completion events  
-- Verifies the signature  
-- Calls `update_site.sh` for the correct site  
-- Runs under a locked‑down system user  
-- Does **not** need docker.sock inside a container  
-- Does **not** require sudo password  
-- Reloads config automatically  
+## 🔔 Automatic Deployments (systemd Webhook)
 
-### Install the Webhook Toolset
+The webhook listener:
+
+- Accepts **workflow_run** events from GitHub
+- Validates signature using `$WH_SECRET`
+- Calls `update_site.sh <SITE_NAME>` under restricted `deploy` permissions
+
+Provision using:
 
 ```bash
-sudo /opt/traefik/traefik/scripts/hooks_up.sh
+/opt/traefik/scripts/hooks_provision.sh
 ```
 
-This will:
+This installs:
 
-✔ Create `/opt/traefik/hooks/`  
-✔ Write `hooks.json`  
-✔ Install `webhook.service` under systemd  
-✔ Install `/etc/sudoers.d/webhook-deploy`  
-✔ Start & enable the service  
-
-### Configure GitHub
+- `webhook.service`
+- `/opt/traefik/hooks/hooks.json`
+- sudoers rules
 
 Webhook URL format:
 
-```plaintext
+```text
 https://hooks.<your-domain>/hooks/deploy-<site>
 ```
 
-Example:
+---
 
-```plaintext
-https://hooks.joshphillipssr.com/hooks/deploy-jpsr
-```
+## 🧹 Cleanup Tools
 
-Event type: **Workflow runs**  
-Content-Type: **application/json**  
-Secret: matching the one in `hooks.json`  
-
-### Test Your Pipeline
-
-Push to `main`, let GitHub Actions finish, and watch:
+### Traefik Cleanup
 
 ```bash
-sudo journalctl -u webhook -f
+/opt/traefik/scripts/cleanup.sh
 ```
 
-You’ll see the deploy fire automatically.
+Removes Traefik, webhook, systemd units, Docker network, and all containers using it.
+
+### Site Cleanup
+
+```bash
+/opt/sites/<SITE_NAME>/scripts/cleanup.sh
+```
+
+Removes the site container and directory.
 
 ---
 
-## 🧱 Architecture Overview
+## 📚 Notes & Best Practices
 
-Traefik serves as the front door:
-
-```plaintext
- Client → Cloudflare → Traefik → Site Containers
-```
-
-All site containers run behind the same shared docker network:
-
-```plaintext
-docker network: traefik_proxy
-```
-
-Traefik issues certificates *automatically* for any hostname referenced in container labels — no further config required.
-
----
-
-## 📝 Notes & Best Practices
-
-- Never commit `.env` files—keep secrets out of git
-- Cloudflare SSL/TLS mode: **Full (strict)**
-- Use `USE_STAGING=true` when testing new hosts
-- The webhook service reloads `hooks.json` dynamically
-- All tools are stateless and safe to rerun anytime
+- Configure Cloudflare SSL mode: **Full (strict)**
+- Never store secrets outside `~deploy/traefik.env`
+- GitHub Actions must build/push images to GHCR
+- Webhooks must use **workflow_run** only
+- All scripts are idempotent and safe to rerun
 
 ---
 
 ## 📜 License
 
-MIT License.
+MIT
+**Repository**: <https://github.com/joshphillipssr/Traefik-Deployment>
