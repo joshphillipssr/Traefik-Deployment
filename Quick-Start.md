@@ -1,4 +1,3 @@
-
 # Traefik-Deployment Quick Start
 
 A concise, opinionated walkthrough for bringing up a hardened Traefik v3 reverse proxy on a fresh Linux host and getting ready to serve containerized sites.
@@ -35,7 +34,7 @@ You will paste this API token into `~deploy/traefik.env` later.
 
 ## 2. Get the Host Prep Scripts
 
-On your **workstation**, clone this repository:
+On your **workstation** (or any machine with Git access), clone this repository to obtain the host preparation scripts. The repository does **not** need to be cloned into a specific directory on the host at this stage. You are only extracting the two host prep scripts.
 
 ```bash
 git clone https://github.com/joshphillipssr/Traefik-Deployment.git
@@ -52,6 +51,15 @@ Copy these two scripts to your target server (e.g. with `scp`):
 ```bash
 scp host_prep1.sh host_prep2.sh root@your-server:/root/
 ```
+
+> **Why this matters:**
+> At this stage, Traefik is *not* installed yet. The authoritative clone of this repository will later be created automatically by `host_prep2.sh` inside:
+>
+> ```text
+> /opt/traefik
+> ```
+>
+> You should **not** manually clone the repository into `/opt/traefik`. Let the provisioning script handle this to ensure permissions and layout are correct.
 
 ---
 
