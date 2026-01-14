@@ -45,17 +45,17 @@ cd Traefik-Deployment/scripts
 
 You will use:
 
-- `host_prep1.sh` — runs as **root**, does base OS + Docker + user setup
-- `host_prep2.sh` — runs as **deploy**, provisions Traefik itself
+- `host_prep_root.sh` — runs as **root**, does base OS + Docker + user setup
+- `host_prep_deploy.sh` — runs as **deploy**, provisions Traefik itself
 
 If you cloned the repository on your workstation, copy the two host prep scripts to the server (for example, into your home directory):
 
 ```bash
-scp host_prep1.sh host_prep2.sh youruser@your-server:~
+scp host_prep_root.sh host_prep_deploy.sh youruser@your-server:~
 ```
 
 > **Why this matters:**
-> At this stage, Traefik is *not* installed yet. The authoritative clone of this repository will later be created automatically by `host_prep2.sh` inside:
+> At this stage, Traefik is *not* installed yet. The authoritative clone of this repository will later be created automatically by `host_prep_deploy.sh` inside:
 >
 > ```text
 > /opt/traefik
@@ -85,11 +85,11 @@ Make the first script executable and run it:
 
 ```bash
 cd /root || cd ~
-chmod +x host_prep1.sh
-./host_prep1.sh
+chmod +x host_prep_root.sh
+./host_prep_root.sh
 ```
 
-`host_prep1.sh` is responsible for:
+`host_prep_root.sh` is responsible for:
 
 - Installing Docker Engine and Docker Compose
 - Creating the `deploy` user with restricted sudo rights
@@ -110,7 +110,7 @@ Exit the root shell and switch to the `deploy` user:
 su - deploy
 ```
 
-Open the environment file created by `host_prep1.sh`:
+Open the environment file created by `host_prep_root.sh`:
 
 ```bash
 nano ~/traefik.env
@@ -149,11 +149,11 @@ From the `deploy` shell, make the second script executable and run it:
 
 ```bash
 cd ~
-chmod +x ~/host_prep2.sh
-./host_prep2.sh
+chmod +x ~/host_prep_deploy.sh
+./host_prep_deploy.sh
 ```
 
-`host_prep2.sh` will:
+`host_prep_deploy.sh` will:
 
 - Source `~/traefik.env`
 - Clone the Traefik-Deployment repo into `/opt/traefik`
