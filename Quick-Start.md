@@ -12,7 +12,7 @@ You will need:
 
 - A Linux host (VPS or bare metal) with:
   - Public IP address
-  - SSH access as **root**
+  - SSH access as a non-root user with sudo privileges
 - A domain managed by **Cloudflare**
 - A GitHub account (for hosting site repos and Docker images)
 - Basic familiarity with SSH, Docker, and Git
@@ -34,7 +34,7 @@ You will paste this API token into `~deploy/traefik.env` later.
 
 ## 2. Get the Host Prep Scripts
 
-On your **workstation** (or any machine with Git access), clone this repository to obtain the host preparation scripts. The repository does **not** need to be cloned into a specific directory on the host at this stage. You are only extracting the two host prep scripts.
+On your **personal workstation** (or the host server in your home directory), clone this repository to obtain the host preparation scripts. These scripts may be copied to the server via `scp`, or you may clone the repository directly on the server as your normal user.
 
 ```bash
 # Optional cd to your home dir
@@ -48,11 +48,10 @@ You will use:
 - `host_prep1.sh` — runs as **root**, does base OS + Docker + user setup
 - `host_prep2.sh` — runs as **deploy**, provisions Traefik itself
 
-Copy these two scripts to your target server (e.g. with `scp`) if you did not clone the repo
-to your host server:
+If you cloned the repository on your workstation, copy the two host prep scripts to the server (for example, into your home directory):
 
 ```bash
-scp host_prep1.sh host_prep2.sh root@your-server:/root/
+scp host_prep1.sh host_prep2.sh youruser@your-server:~
 ```
 
 > **Why this matters:**
@@ -68,18 +67,24 @@ scp host_prep1.sh host_prep2.sh root@your-server:/root/
 
 ## 3. Step One — Prepare the Host (root)
 
-Before we begin: hopefully you’re a good sysadmin and **cannot** SSH directly into your host as `root`. If that’s the case (good!), SSH in as your normal user and switch to root with `sudo -i` or equivalent. The important thing is that the following steps are executed as the **root user**, regardless of how you got there.
-
-SSH into the server as **root**:
+SSH into the server as your normal user:
 
 ```bash
-ssh root@your-server
+ssh youruser@your-server
 ```
+
+Then escalate to root:
+
+```bash
+sudo -i
+```
+
+> **Note:** Direct SSH access as `root` is intentionally discouraged. If your system allows it, consider disabling it once provisioning is complete.
 
 Make the first script executable and run it:
 
 ```bash
-cd /root
+cd /root || cd ~
 chmod +x host_prep1.sh
 ./host_prep1.sh
 ```
@@ -99,7 +104,7 @@ When it finishes, do **not** run Traefik yet. First, you must configure the envi
 
 ## 4. Configure `~deploy/traefik.env`
 
-Still on the server, switch to the `deploy` user:
+Exit the root shell and switch to the `deploy` user:
 
 ```bash
 su - deploy
@@ -211,7 +216,7 @@ To have GitHub automatically redeploy a site when a workflow completes:
 
 ### 7.1 Provision the webhook on the host
 
-On the Traefik host (typically as `root` via sudo), run the webhook provisioning script provided by this repo:
+On the Traefik host, escalate to root and run the webhook provisioning script provided by this repo:
 
 ```bash
 sudo /opt/traefik/scripts/hooks_provision.sh
