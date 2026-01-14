@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Root-side bootstrap: create deploy, install docker, clone repo, lay down env.
+# Root-side bootstrap: create deploy user, install Docker, lay down base directories and env.
 
 DEPLOY_USER="${DEPLOY_USER:-deploy}"
 TRAEFIK_DIR="/opt/traefik"
@@ -66,18 +66,9 @@ bootstrap_repo_and_env() {
   mkdir -p "$TRAEFIK_DIR" "$SITES_DIR"
   chown -R "$DEPLOY_USER:$DEPLOY_USER" "$TRAEFIK_DIR" "$SITES_DIR"
 
-  if [[ -d "$TRAEFIK_DIR/.git" ]]; then
-    log "Updating Traefik-Deployment in $TRAEFIK_DIR"
-    sudo -u "$DEPLOY_USER" git -C "$TRAEFIK_DIR" fetch --all --prune
-    sudo -u "$DEPLOY_USER" git -C "$TRAEFIK_DIR" switch -q main || true
-    sudo -u "$DEPLOY_USER" git -C "$TRAEFIK_DIR" pull --ff-only
-  else
-    log "Cloning Traefik-Deployment to $TRAEFIK_DIR"
-    sudo -u "$DEPLOY_USER" git clone "$TRAEFIK_REPO_URL" "$TRAEFIK_DIR"
-  fi
+  log "Traefik directories created. Repository will be cloned during deploy-side prep."
 
-  # Copy env sample into ~deploy/traefik.env on first run
-  local sample="${TRAEFIK_DIR}/traefik.env.sample"
+  local sample="$TRAEFIK_DIR/traefik.env.sample"
   if [[ -f "$sample" ]]; then
     if [[ ! -f "$DEPLOY_ENV" ]]; then
       log "Creating ${DEPLOY_ENV} from traefik.env.sample"
@@ -87,12 +78,8 @@ bootstrap_repo_and_env() {
     fi
     chown "$DEPLOY_USER:$DEPLOY_USER" "$DEPLOY_ENV"
   else
-    log "WARNING: ${sample} not found – env file will need to be created manually" >&2
+    log "NOTE: traefik.env.sample not present yet; env will be created after repo clone" >&2
   fi
-
-  # Ensure scripts are executable
-  chmod +x "$TRAEFIK_DIR"/scripts/*.sh || true
-  chown -R "$DEPLOY_USER:$DEPLOY_USER" "$TRAEFIK_DIR"
 }
 
 configure_sudo_for_deploy() {
@@ -127,7 +114,7 @@ Then edit your environment file:
 
 And run the deploy-side prep script (host_prep_deploy.sh):
 
-  /opt/traefik/scripts/host_prep_deploy.sh
+  ~/host_prep_deploy.sh
 
 After that, you'll be ready to start Traefik with:
 

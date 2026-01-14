@@ -34,11 +34,9 @@ You will paste this API token into `~deploy/traefik.env` later.
 
 ## 2. Get the Host Prep Scripts
 
-On your **personal workstation** (or the host server in your home directory), clone this repository to obtain the host preparation scripts. These scripts may be copied to the server via `scp`, or you may clone the repository directly on the server as your normal user.
+On your home directory on the **host server** (or from your personal workstation if you prefer), clone this repository to obtain the host preparation scripts. These scripts may be copied to the server via `scp`, or you may clone the repository directly on the server as your normal user.
 
 ```bash
-# Optional cd to your home dir
-# cd ~
 git clone https://github.com/joshphillipssr/Traefik-Deployment.git
 cd Traefik-Deployment/scripts
 ```
@@ -67,7 +65,7 @@ scp host_prep_root.sh host_prep_deploy.sh youruser@your-server:~
 
 ## 3. Step One — Prepare the Host (root)
 
-SSH into the server as your normal user:
+SSH into the server as your normal user (if not there already):
 
 ```bash
 ssh youruser@your-server
@@ -84,7 +82,6 @@ sudo -i
 Make the first script executable and run it:
 
 ```bash
-cd /root || cd ~
 chmod +x host_prep_root.sh
 ./host_prep_root.sh
 ```

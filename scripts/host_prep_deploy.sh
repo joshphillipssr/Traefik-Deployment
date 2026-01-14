@@ -6,6 +6,7 @@ TRAEFIK_DIR="/opt/traefik"
 SITES_DIR="/opt/sites"
 DEPLOY_HOME="/home/${DEPLOY_USER}"
 DEPLOY_ENV="${DEPLOY_HOME}/traefik.env"
+TRAEFIK_REPO_URL="${TRAEFIK_REPO_URL:-https://github.com/joshphillipssr/Traefik-Deployment.git}"
 
 log() { printf "\n==> %s\n" "$*"; }
 
@@ -18,7 +19,7 @@ need_deploy() {
 
 load_env() {
   if [[ ! -f "$DEPLOY_ENV" ]]; then
-    echo "Missing ${DEPLOY_ENV}. Create it (from traefik.env.sample) before running this script." >&2
+    echo "Missing ${DEPLOY_ENV}. The repo (and sample env) may not exist until after cloning. Create it (from traefik.env.sample) before running this script." >&2
     exit 1
   fi
 
@@ -41,11 +42,12 @@ update_repo() {
     git -C "$TRAEFIK_DIR" fetch --all --prune
     git -C "$TRAEFIK_DIR" switch -q main || true
     git -C "$TRAEFIK_DIR" pull --ff-only
-    chmod +x "$TRAEFIK_DIR"/scripts/*.sh || true
   else
-    echo "ERROR: $TRAEFIK_DIR does not look like a git repo. Run host_prep_root.sh first." >&2
-    exit 1
+    log "Cloning Traefik-Deployment repo into $TRAEFIK_DIR"
+    git clone "$TRAEFIK_REPO_URL" "$TRAEFIK_DIR"
   fi
+
+  chmod +x "$TRAEFIK_DIR"/scripts/*.sh || true
 }
 
 next_steps() {
