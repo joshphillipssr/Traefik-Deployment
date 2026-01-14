@@ -37,6 +37,8 @@ You will paste this API token into `~deploy/traefik.env` later.
 On your **workstation** (or any machine with Git access), clone this repository to obtain the host preparation scripts. The repository does **not** need to be cloned into a specific directory on the host at this stage. You are only extracting the two host prep scripts.
 
 ```bash
+# Optional cd to your home dir
+# cd ~
 git clone https://github.com/joshphillipssr/Traefik-Deployment.git
 cd Traefik-Deployment/scripts
 ```
@@ -46,7 +48,8 @@ You will use:
 - `host_prep1.sh` — runs as **root**, does base OS + Docker + user setup
 - `host_prep2.sh` — runs as **deploy**, provisions Traefik itself
 
-Copy these two scripts to your target server (e.g. with `scp`):
+Copy these two scripts to your target server (e.g. with `scp`) if you did not clone the repo
+to your host server:
 
 ```bash
 scp host_prep1.sh host_prep2.sh root@your-server:/root/
@@ -64,6 +67,8 @@ scp host_prep1.sh host_prep2.sh root@your-server:/root/
 ---
 
 ## 3. Step One — Prepare the Host (root)
+
+Before we begin: hopefully you’re a good sysadmin and **cannot** SSH directly into your host as `root`. If that’s the case (good!), SSH in as your normal user and switch to root with `sudo -i` or equivalent. The important thing is that the following steps are executed as the **root user**, regardless of how you got there.
 
 SSH into the server as **root**:
 
