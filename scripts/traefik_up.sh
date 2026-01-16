@@ -22,10 +22,11 @@ fi
 
 # Allow explicit overrides from the current environment, but require that
 # the values are available from either env or the env file.
+# Project-wide secret name is WH_SECRET; alias it locally for clarity
 CF_API_TOKEN="${CF_API_TOKEN:?CF_API_TOKEN required (set in environment or $ENV_FILE)}"
 EMAIL="${EMAIL:?EMAIL required (set in environment or $ENV_FILE)}"
 USE_STAGING="${USE_STAGING:-false}"
-WEBHOOK_SECRET="${WEBHOOK_SECRET:?WEBHOOK_SECRET required (set in environment or $ENV_FILE)}"
+WH_SECRET="${WH_SECRET:?WH_SECRET required (set in environment or $ENV_FILE)}"
 
 # Ensure Docker available
 if ! command -v docker >/dev/null 2>&1; then
@@ -46,15 +47,15 @@ docker network create "$NETWORK_NAME" >/dev/null 2>&1 || true
 
 # Handle staging vs production ACME config
 if [[ "$USE_STAGING" == "true" ]]; then
-  cat > "${TRAEFIK_DIR}/docker-compose.override.yml" <<EOF
+  cat > "${TRAEFIK_DIR}/docker/docker-compose.override.yml" <<EOF
 services:
   traefik:
     command:
       - --certificatesresolvers.cf.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
 EOF
 else
-  if [[ -f "${TRAEFIK_DIR}/docker-compose.override.yml" ]]; then
-    rm -f "${TRAEFIK_DIR}/docker-compose.override.yml"
+  if [[ -f "${TRAEFIK_DIR}/docker/docker-compose.override.yml" ]]; then
+    rm -f "${TRAEFIK_DIR}/docker/docker-compose.override.yml"
   fi
 fi
 
@@ -63,7 +64,7 @@ export CF_API_TOKEN EMAIL USE_STAGING NETWORK_NAME
 
 # Bring up Traefik using the compose stack in the docker/ directory
 (
-  cd "${TRAEFIK_DIR}"
+  cd "${TRAEFIK_DIR}/docker"
   docker compose -f docker-compose.yml up -d
 )
 
