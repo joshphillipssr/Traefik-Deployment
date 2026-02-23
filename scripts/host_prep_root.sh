@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Root-side bootstrap: create deploy user, install Docker, lay down base directories and env.
+# Root-side bootstrap: create deploy user, install Docker, and lay down base directories.
 
 DEPLOY_USER="${DEPLOY_USER:-deploy}"
 TRAEFIK_DIR="/opt/traefik"
 SITES_DIR="/opt/sites"
-TRAEFIK_REPO_URL="${TRAEFIK_REPO_URL:-https://github.com/joshphillipssr/Traefik-Deployment.git}"
 DEPLOY_HOME="/home/${DEPLOY_USER}"
-DEPLOY_ENV="${DEPLOY_HOME}/traefik.env"
 
 log() { printf "\n==> %s\n" "$*"; }
 
@@ -66,20 +64,7 @@ bootstrap_repo_and_env() {
   mkdir -p "$TRAEFIK_DIR" "$SITES_DIR"
   chown -R "$DEPLOY_USER:$DEPLOY_USER" "$TRAEFIK_DIR" "$SITES_DIR"
 
-  log "Traefik directories created. Repository will be cloned during deploy-side prep."
-
-  local sample="$TRAEFIK_DIR/traefik.env.sample"
-  if [[ -f "$sample" ]]; then
-    if [[ ! -f "$DEPLOY_ENV" ]]; then
-      log "Creating ${DEPLOY_ENV} from traefik.env.sample"
-      sudo -u "$DEPLOY_USER" cp "$sample" "$DEPLOY_ENV"
-    else
-      log "${DEPLOY_ENV} already exists, not overwriting"
-    fi
-    chown "$DEPLOY_USER:$DEPLOY_USER" "$DEPLOY_ENV"
-  else
-    log "NOTE: traefik.env.sample not present yet; env will be created after repo clone" >&2
-  fi
+  log "Traefik directories created. Repository/env bootstrap happens during deploy-side prep."
 }
 
 configure_sudo_for_deploy() {
@@ -104,19 +89,18 @@ next_steps() {
 
 ✅ Phase 1 host prep complete.
 
-You can now switch to the '${DEPLOY_USER}' user and finish Traefik setup:
+You can now switch to the '${DEPLOY_USER}' user and run deploy-side prep:
 
   sudo -iu ${DEPLOY_USER}
-
-Then edit your environment file:
-
-  nano ~/traefik.env
-
-And run the deploy-side prep script (host_prep_deploy.sh):
-
   ~/host_prep_deploy.sh
 
-After that, you'll be ready to start Traefik with:
+On first run, host_prep_deploy.sh will create ~/traefik.env if missing and then validate required values.
+If validation fails, edit the env file and rerun:
+
+  nano ~/traefik.env
+  ~/host_prep_deploy.sh
+
+When deploy-side prep succeeds, start Traefik with:
 
   /opt/traefik/scripts/traefik_up.sh
 

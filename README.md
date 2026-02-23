@@ -43,17 +43,21 @@ All secrets and configuration live **only** in:
 ~deploy/traefik.env
 ```
 
-Required variables:
+Expected variables:
 
 ```text
 CF_API_TOKEN=
 EMAIL=
 USE_STAGING=false
 WEBHOOK_SECRET=
-HOSTNAME=
-DEFAULT_SITE_REPO=
-DEFAULT_SITE_TEMPLATE=
+HOOKS_HOST=
+TRAEFIK_REPO_URL=
+TRAEFIK_DIR=/opt/traefik
+SITES_DIR=/opt/sites
+DEPLOY_USER=deploy
 ```
+
+`host_prep_deploy.sh` enforces that `CF_API_TOKEN`, `EMAIL`, and `WEBHOOK_SECRET` are set to non-placeholder values before it completes. `HOOKS_HOST` should be set before enabling webhook routing.
 
 All scripts source this file. No secrets appear inside `/opt`, compose files, or repositories.
 
@@ -63,21 +67,20 @@ All scripts source this file. No secrets appear inside `/opt`, compose files, or
 
 Provisioning Traefik requires two scripts: one run as **root**, one run as **deploy**.
 
-### **Step 1 — host_prep1.sh (run as root)**
+### **Step 1 — host_prep_root.sh (run as root)**
 
 - Installs Docker & Docker Compose
 - Creates `deploy` user with restricted sudoers entries
 - Creates `/opt/traefik` and `/opt/sites`
-- Copies `traefik.env.sample` to `~deploy/traefik.env`
-- Instructs operator to log in as deploy
+- Instructs operator to log in as deploy and run deploy-side prep
 
-### **Step 2 — host_prep2.sh (run as deploy)**
+### **Step 2 — host_prep_deploy.sh (run as deploy)**
 
-- Sources `~deploy/traefik.env`
 - Clones Traefik‑Deployment repo into `/opt/traefik`
 - Ensures permissions
-- Runs `create_network.sh`
-- Brings Traefik online using `traefik_up.sh`
+- Creates `~deploy/traefik.env` from `traefik.env.sample` if missing
+- Sources and validates `~deploy/traefik.env` with clear error messages for missing/placeholder required values
+- Prints next commands to start Traefik (`traefik_up.sh`) and optional webhook provisioning
 
 ---
 

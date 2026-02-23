@@ -91,15 +91,13 @@ chmod +x host_prep_root.sh
 - Installing Docker Engine and Docker Compose
 - Creating the `deploy` user with restricted sudo rights
 - Creating `/opt/traefik` and `/opt/sites`
-- Fetching `traefik.env.sample` and copying it to:
-  - `~deploy/traefik.env`
-- Printing a message telling you to log in as `deploy`
+- Printing next steps for the deploy-side prep script
 
-When it finishes, do **not** run Traefik yet. First, you must configure the environment file.
+When it finishes, switch to `deploy` and run `host_prep_deploy.sh` once to bootstrap the repo and env file.
 
 ---
 
-## 4. Configure `~deploy/traefik.env`
+## 4. Bootstrap And Configure `~deploy/traefik.env`
 
 Exit the root shell and switch to the `deploy` user:
 
@@ -107,7 +105,15 @@ Exit the root shell and switch to the `deploy` user:
 su - deploy
 ```
 
-Open the environment file created by `host_prep_root.sh`:
+Run deploy-side prep once to clone `/opt/traefik` and auto-create `~/traefik.env` if missing:
+
+```bash
+cd ~
+chmod +x ~/host_prep_deploy.sh
+./host_prep_deploy.sh
+```
+
+Then open the environment file:
 
 ```bash
 nano ~/traefik.env
@@ -120,9 +126,7 @@ CF_API_TOKEN="your-cloudflare-api-token"
 EMAIL="you@example.com"
 USE_STAGING=false
 WEBHOOK_SECRET="ChangeThisSecretNow"
-HOSTNAME="your-traefik-hostname"        # e.g. traefik.example.com or your main site
-DEFAULT_SITE_REPO="<optional-default-site-template-repo>"
-DEFAULT_SITE_TEMPLATE="<optional-template-id-or-path>"
+HOOKS_HOST="hooks.example.com"
 ```
 
 Guidance:
@@ -131,12 +135,11 @@ Guidance:
 - `EMAIL` — email used for Let’s Encrypt registration
 - `USE_STAGING` — set to `true` when testing; `false` for production
 - `WEBHOOK_SECRET` — shared secret used to verify GitHub webhooks
-- `HOSTNAME` — hostname that will terminate TLS on this Traefik instance
-- `DEFAULT_SITE_*` — optional defaults for your site template workflow
+- `HOOKS_HOST` — hostname used when exposing webhook routes through Traefik
 
 Save the file and exit.
 
-> **Important:** All other scripts rely on this file. If it is missing or incomplete, provisioning will fail.
+> **Important:** `host_prep_deploy.sh` validates required values and exits with clear errors until placeholders are replaced.
 
 ---
 
@@ -152,11 +155,17 @@ chmod +x ~/host_prep_deploy.sh
 
 `host_prep_deploy.sh` will:
 
-- Source `~/traefik.env`
 - Clone the Traefik-Deployment repo into `/opt/traefik`
 - Ensure correct ownership and permissions on `/opt/traefik` and `/opt/sites`
-- Create the shared Docker network `traefik_proxy`
-- Bring Traefik online via `traefik_up.sh`
+- Create `~/traefik.env` from `traefik.env.sample` if needed
+- Source and validate `~/traefik.env`
+- Print follow-up commands for Traefik startup and optional webhook provisioning
+
+After `host_prep_deploy.sh` succeeds, start Traefik:
+
+```bash
+/opt/traefik/scripts/traefik_up.sh
+```
 
 If everything succeeds, you should have:
 
@@ -213,10 +222,10 @@ To have GitHub automatically redeploy a site when a workflow completes:
 
 ### 7.1 Provision the webhook on the host
 
-On the Traefik host, escalate to root and run the webhook provisioning script provided by this repo:
+On the Traefik host, run the webhook provisioning script as root:
 
 ```bash
-sudo /opt/traefik/scripts/hooks_provision.sh
+/opt/traefik/scripts/hooks_provision.sh
 ```
 
 This will:
