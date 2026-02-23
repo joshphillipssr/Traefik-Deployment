@@ -194,25 +194,49 @@ Look for messages indicating successful ACME configuration and that entrypoints 
 
 ---
 
-## 6. First Site (Manual Deploy Overview)
+## 6. First App (Manual-First Deploy)
 
-Once Traefik is up, you can attach site containers behind it. At a high level, you will:
+Once Traefik is up, onboard any app container with a dedicated hostname route.
 
-1. Build and push a Docker image for your site to GHCR (via a GitHub Actions workflow).
-2. Provide Traefik with:
-   - A **site name**
-   - One or more **hostnames**
-   - The **image reference** (e.g. `ghcr.io/youruser/yourimage:latest`)
-3. Use the provided scripts to generate a per-site `docker-compose.yml` and start the container.
+From the `deploy` shell:
 
-The exact steps (including `bootstrap_site_on_host.sh` and `deploy_to_host.sh`) live in your **site template repository**. That repo is responsible for:
+```bash
+SITE_NAME=hello-app \
+SITE_HOST=hello.example.com \
+IMAGE=nginxdemos/hello:plain-text \
+APP_PORT=80 \
+/opt/traefik/scripts/onboard_generic_app.sh
+```
 
-- Cloning itself into `/opt/sites/<SITE_NAME>`
-- Creating `/opt/sites/<SITE_NAME>/docker-compose.yml`
-- Attaching the site container to `traefik_proxy`
-- Setting Traefik labels to route `Host(...)` to the site container
+This creates:
 
-After the **first** deployment of a site, future updates can be automated with webhooks.
+- `/opt/sites/hello-app/docker-compose.yml`
+- Host-based Traefik labels bound to `hello.example.com`
+- `traefik_proxy` network attachment
+
+Manual deploy commands:
+
+```bash
+docker compose -f /opt/sites/hello-app/docker-compose.yml pull
+docker compose -f /opt/sites/hello-app/docker-compose.yml up -d
+```
+
+Required label pattern for any app onboarding:
+
+```text
+traefik.enable=true
+traefik.http.routers.<SITE_NAME>.rule=Host(`<SITE_HOST>`)
+traefik.http.routers.<SITE_NAME>.entrypoints=websecure
+traefik.http.routers.<SITE_NAME>.tls=true
+traefik.http.routers.<SITE_NAME>.tls.certresolver=cf
+traefik.http.services.<SITE_NAME>.loadbalancer.server.port=<APP_PORT>
+```
+
+After first deployment, updates can be handled with:
+
+```bash
+/opt/traefik/scripts/update_site.sh hello-app
+```
 
 ---
 
@@ -294,7 +318,7 @@ sudo /opt/traefik/scripts/cleanup.sh
 
 From here you can:
 
-- Build out one or more site repos using the VitePress template
+- Build out one or more app repos and publish images to GHCR
 - Add GitHub Actions workflows that build and push Docker images to GHCR
 - Wire additional sites to Traefik using unique hostnames and containers
 - Harden host security, monitoring, and backups around this baseline

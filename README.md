@@ -101,7 +101,7 @@ This ensures:
 
 ---
 
-## 🌐 Deploying a Site (First Deployment)
+## 🌐 Generic App Onboarding (Manual First)
 
 Sites live under:
 
@@ -109,26 +109,46 @@ Sites live under:
 /opt/sites/<SITE_NAME>/
 ```
 
-To bootstrap a site from its template repo:
+Use the generic onboarding script to scaffold a per-app compose file:
 
 ```bash
-/opt/sites/<SITE_NAME>/scripts/bootstrap_site_on_host.sh
+SITE_NAME=<site-name> \
+SITE_HOST=<public-hostname> \
+IMAGE=<container-image> \
+APP_PORT=<container-port> \
+/opt/traefik/scripts/onboard_generic_app.sh
 ```
 
-To deploy a site to Traefik:
+Example:
 
 ```bash
-/opt/sites/<SITE_NAME>/scripts/deploy_to_host.sh
+SITE_NAME=helpdesk-bridge \
+SITE_HOST=helpdesk-bridge.cfhidta.org \
+IMAGE=ghcr.io/central-florida-hidta/helpdesk-bridge:latest \
+APP_PORT=8080 \
+/opt/traefik/scripts/onboard_generic_app.sh
 ```
 
-This:
+The script:
 
-- Generates a Traefik‑aware docker-compose.yml
-- Connects container to `traefik_proxy`
-- Applies correct Traefik labels
-- Starts the container
+- Ensures the shared `traefik_proxy` Docker network exists
+- Generates `/opt/sites/<SITE_NAME>/docker-compose.yml`
+- Applies host-based Traefik labels for dedicated hostname routing
+- Leaves deploy as manual-first by default (`docker compose pull` + `docker compose up -d`)
 
-After this one-time deployment, future deploys can be automated.
+Generated labels follow this pattern:
+
+```text
+traefik.enable=true
+traefik.http.routers.<SITE_NAME>.rule=Host(`<SITE_HOST>`)
+traefik.http.routers.<SITE_NAME>.entrypoints=websecure
+traefik.http.routers.<SITE_NAME>.tls=true
+traefik.http.routers.<SITE_NAME>.tls.certresolver=cf
+traefik.http.services.<SITE_NAME>.loadbalancer.server.port=<APP_PORT>
+```
+
+For immediate deploy on scaffold, set `DEPLOY_NOW=true`.
+After first deployment, future updates can be automated by webhook or run manually.
 
 ---
 
@@ -199,7 +219,7 @@ Removes Traefik, webhook, systemd units, Docker network, and all containers usin
 ### Site Cleanup
 
 ```bash
-/opt/sites/<SITE_NAME>/scripts/cleanup.sh
+/opt/traefik/scripts/remove_site.sh <SITE_NAME>
 ```
 
 Removes the site container and directory.
