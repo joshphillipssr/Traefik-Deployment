@@ -123,11 +123,14 @@ Example:
 
 ```bash
 SITE_NAME=helpdesk-bridge \
-SITE_HOST=helpdesk-bridge.cfhidta.org \
+SITE_HOST=cfhidta-helpdesk-bridge.joshphillipssr.com \
 IMAGE=ghcr.io/central-florida-hidta/helpdesk-bridge:latest \
 APP_PORT=8080 \
 /opt/traefik/scripts/onboard_generic_app.sh
 ```
+
+For current token-scope constraints, use `cfhidta-helpdesk-bridge.joshphillipssr.com` as the bridge hostname.
+Planned cutover target remains `helpdesk-bridge.cfhidta.org` once `cfhidta.org` DNS token access is available.
 
 The script:
 
@@ -149,6 +152,8 @@ traefik.http.services.<SITE_NAME>.loadbalancer.server.port=<APP_PORT>
 
 For immediate deploy on scaffold, set `DEPLOY_NOW=true`.
 After first deployment, future updates can be automated by webhook or run manually.
+
+Helpdesk-specific route profile details are documented in `HELPDESK-BRIDGE-ROUTE-PROFILE.md`.
 
 ---
 
