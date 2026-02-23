@@ -122,15 +122,12 @@ APP_PORT=<container-port> \
 Example:
 
 ```bash
-SITE_NAME=helpdesk-bridge \
-SITE_HOST=cfhidta-helpdesk-bridge.joshphillipssr.com \
-IMAGE=ghcr.io/central-florida-hidta/helpdesk-bridge:latest \
-APP_PORT=8080 \
+SITE_NAME=docs \
+SITE_HOST=docs.example.com \
+IMAGE=ghcr.io/example/docs:latest \
+APP_PORT=80 \
 /opt/traefik/scripts/onboard_generic_app.sh
 ```
-
-Bridge hostname is `cfhidta-helpdesk-bridge.joshphillipssr.com`.
-This is the standing operational host due `cfhidta.org` DNS authority being constrained by Wix-managed nameservers.
 
 The script:
 
@@ -152,8 +149,6 @@ traefik.http.services.<SITE_NAME>.loadbalancer.server.port=<APP_PORT>
 
 For immediate deploy on scaffold, set `DEPLOY_NOW=true`.
 After first deployment, future updates can be automated by webhook or run manually.
-
-Helpdesk-specific route profile details are documented in `HELPDESK-BRIDGE-ROUTE-PROFILE.md`.
 
 ---
 
