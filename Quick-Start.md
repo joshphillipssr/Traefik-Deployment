@@ -119,7 +119,7 @@ Fill in at least the following values:
 CF_API_TOKEN="your-cloudflare-api-token"
 EMAIL="you@example.com"
 USE_STAGING=false
-WH_SECRET="ChangeThisSecretNow"
+WEBHOOK_SECRET="ChangeThisSecretNow"
 HOSTNAME="your-traefik-hostname"        # e.g. traefik.example.com or your main site
 DEFAULT_SITE_REPO="<optional-default-site-template-repo>"
 DEFAULT_SITE_TEMPLATE="<optional-template-id-or-path>"
@@ -130,7 +130,7 @@ Guidance:
 - `CF_API_TOKEN` — Cloudflare token with DNS edit rights
 - `EMAIL` — email used for Let’s Encrypt registration
 - `USE_STAGING` — set to `true` when testing; `false` for production
-- `WH_SECRET` — shared secret used to verify GitHub webhooks
+- `WEBHOOK_SECRET` — shared secret used to verify GitHub webhooks
 - `HOSTNAME` — hostname that will terminate TLS on this Traefik instance
 - `DEFAULT_SITE_*` — optional defaults for your site template workflow
 
@@ -238,7 +238,7 @@ In your site’s GitHub repository:
      ```
 
    - **Content type:** `application/json`
-   - **Secret:** must match `WH_SECRET` in `~deploy/traefik.env`
+   - **Secret:** must match `WEBHOOK_SECRET` in `~deploy/traefik.env`
    - **Which events?** Choose **Let me select individual events** and enable **Workflow runs**.
 
 Now, whenever your GitHub Actions workflow successfully builds and pushes a new image, GitHub will:

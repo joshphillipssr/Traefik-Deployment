@@ -49,7 +49,7 @@ Required variables:
 CF_API_TOKEN=
 EMAIL=
 USE_STAGING=false
-WH_SECRET=
+WEBHOOK_SECRET=
 HOSTNAME=
 DEFAULT_SITE_REPO=
 DEFAULT_SITE_TEMPLATE=
@@ -160,7 +160,7 @@ Dashboard enablement requires hostname‑based routing and a basic‑auth middle
 The webhook listener:
 
 - Accepts **workflow_run** events from GitHub
-- Validates signature using `$WH_SECRET`
+- Validates signature using `$WEBHOOK_SECRET`
 - Calls `update_site.sh <SITE_NAME>` under restricted `deploy` permissions
 
 Provision using:

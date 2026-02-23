@@ -43,7 +43,7 @@ This file tracks follow-up items, refinements, and hardening tasks identified du
 
 - [ ] Verify webhook sudoers rules are minimal and correct.
 
-- [ ] Add explicit validation and error messaging for missing `WH_SECRET` and `HOOKS_HOST`.
+- [ ] Add explicit validation and error messaging for missing `WEBHOOK_SECRET` and `HOOKS_HOST`.
 
 ---
 ## Documentation Enhancements
