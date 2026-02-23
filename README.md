@@ -129,8 +129,8 @@ APP_PORT=8080 \
 /opt/traefik/scripts/onboard_generic_app.sh
 ```
 
-For current token-scope constraints, use `cfhidta-helpdesk-bridge.joshphillipssr.com` as the bridge hostname.
-Planned cutover target remains `helpdesk-bridge.cfhidta.org` once `cfhidta.org` DNS token access is available.
+Bridge hostname is `cfhidta-helpdesk-bridge.joshphillipssr.com`.
+This is the standing operational host due `cfhidta.org` DNS authority being constrained by Wix-managed nameservers.
 
 The script:
 

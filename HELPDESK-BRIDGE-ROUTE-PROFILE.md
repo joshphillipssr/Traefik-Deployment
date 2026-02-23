@@ -2,7 +2,7 @@
 
 Host-based route profile for deploying Helpdesk Bridge behind Traefik.
 
-## Active Hostname (Current Constraint)
+## Operational Hostname
 
 ```text
 cfhidta-helpdesk-bridge.joshphillipssr.com
@@ -10,16 +10,8 @@ cfhidta-helpdesk-bridge.joshphillipssr.com
 
 Reason:
 
-- Current DNS-01 token scope is limited to `joshphillipssr.com`.
-- Certificate issuance for bridge traffic must stay in that zone until `cfhidta.org` token access is available.
-
-## Planned Cutover Hostname
-
-```text
-helpdesk-bridge.cfhidta.org
-```
-
-Use this host after a valid `cfhidta.org` DNS token is in place for Traefik ACME DNS-01.
+- `cfhidta.org` is currently Wix-managed with nameserver constraints.
+- Bridge DNS and DNS-01 certificate issuance must remain under `joshphillipssr.com`.
 
 ## Routing Model
 
@@ -33,7 +25,7 @@ Expected endpoint paths on the same host:
 - `/health`
 - `/webhooks`
 
-## Deployment Example (Current Hostname)
+## Deployment Example
 
 ```bash
 SITE_NAME=helpdesk-bridge \
@@ -57,3 +49,11 @@ Expected:
 - HTTPS handshake succeeds (no Cloudflare 525/526)
 - `/health` returns app-defined health status
 - `/webhooks` reaches bridge handler (status may vary by method/auth)
+
+## Future Re-Hostname (Optional)
+
+If DNS authority for `cfhidta.org` changes in the future, reassess cutover to:
+
+```text
+helpdesk-bridge.cfhidta.org
+```
