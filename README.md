@@ -228,7 +228,7 @@ Removes the site container and directory.
 
 ## 📚 Notes & Best Practices
 
-- Configure Cloudflare SSL mode: **Full (strict)**
+- Follow Cloudflare prerequisites in [CLOUDFLARE-SETUP.md](CLOUDFLARE-SETUP.md)
 - Never store secrets outside `~deploy/traefik.env`
 - GitHub Actions must build/push images to GHCR
 - Webhooks must use **workflow_run** only

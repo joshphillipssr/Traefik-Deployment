@@ -19,16 +19,14 @@ You will need:
 
 ### 1.1 Cloudflare DNS & SSL prerequisites
 
-In Cloudflare for your domain:
+Use the canonical Cloudflare checklist in [CLOUDFLARE-SETUP.md](CLOUDFLARE-SETUP.md).
 
-1. Create an **A** (or AAAA) record for the Traefik host, e.g.:
-   - `@` → your server IP (for `example.com`)
-   - `hooks` → your server IP (for `hooks.example.com`, used by webhooks)
-   - Any site hostnames you plan to use, e.g. `docs.example.com`
-2. Set SSL/TLS mode to **Full (strict)**.
-3. Create a **Cloudflare API token** with permissions suitable for DNS-01 challenge (e.g. edit DNS for your zone).
+That document is the single source of truth for:
 
-You will paste this API token into `~deploy/traefik.env` later.
+- DNS record requirements
+- Proxy mode expectations
+- SSL/TLS mode (`Full (strict)`)
+- `CF_API_TOKEN` permissions for DNS-01
 
 ---
 
